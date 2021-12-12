@@ -18,10 +18,16 @@ pub mod mysolanaapp {
         let base_account = &mut ctx.accounts.base_account;
         match &mut base_account.current {
             Some(State::FirstState { count }) => {
+                if *count == u32::MAX {
+                    return Err(CustomError::MaxCountReached.into());
+                }
                 msg!("Incrementing First State count from {} to {}", count, *count + 1);
                 *count += 1;
             }
             Some(State::SecondState { count }) => {
+                if *count == u64::MAX {
+                    return Err(CustomError::MaxCountReached.into());
+                }
                 msg!("Incrementing Second State count from {} to {}", count, *count + 1);
                 *count += 1;
             }
@@ -37,10 +43,18 @@ pub mod mysolanaapp {
         let base_account = &mut ctx.accounts.base_account;
         match &mut base_account.current {
             Some(State::FirstState { count }) => {
+                if *count == u32::MIN {
+                    msg!("Cannot decrement State count from 0");
+                    return Err(CustomError::MinCountReached.into());
+                }
                 msg!("Decrementing First State count from {} to {}", count, *count - 1);
                 *count -= 1;
             }
             Some(State::SecondState { count }) => {
+                if *count == u64::MIN {
+                    msg!("Cannot decrement State count from 0");
+                    return Err(CustomError::MinCountReached.into());
+                }
                 msg!("Decrementing Second State count from {} to {}", count, *count - 1);
                 *count -= 1;
             }
@@ -52,22 +66,30 @@ pub mod mysolanaapp {
         Ok(())
     }
 
-    pub fn get_count(ctx: Context<GetCount>) -> Result<u64, ProgramError> {
-        let base_account = &ctx.accounts.base_account;
-        match &base_account.current {
+    pub fn upgrade_account(ctx: Context<UpgradeAccount>) -> ProgramResult {
+        let base_account = &mut ctx.accounts.base_account;
+        match &mut base_account.current {
             Some(State::FirstState { count }) => {
-                msg!("First State count is {}", count);
-                Ok(*count)
+                msg!("Upgrading First State to Second State");
+                base_account.current = Some(State::SecondState { count: *count as u64 });
             }
-            Some(State::SecondState { count }) => {
-                msg!("Second State count is {}", count);
-                Ok(*count)
+            Some(State::SecondState { .. }) => {
+                //Nothing to do
             }
             _ => {
                 return Err(ProgramError::InvalidAccountData);
             }
         }
+
+        Ok(())
     }
+
+}
+
+#[error]
+pub enum CustomError {
+    MaxCountReached,
+    MinCountReached,
 }
 
 #[derive(Accounts)]
@@ -92,7 +114,7 @@ pub struct Decrement<'info> {
 }
 
 #[derive(Accounts)]
-pub struct GetCount<'info> {
+pub struct UpgradeAccount<'info> {
     #[account(mut)]
     pub base_account: Account<'info, BaseAccount>
 }
@@ -104,6 +126,6 @@ pub struct BaseAccount {
 }
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub enum State {
-    FirstState { count: u64 },
+    FirstState { count: u32 },
     SecondState { count: u64 },
 }
