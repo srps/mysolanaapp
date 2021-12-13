@@ -1,18 +1,19 @@
 [package]
-name = "mysolanaapp"
+name = "solana_state_app"
 version = "0.1.0"
 description = "Created with Anchor"
 edition = "2018"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "mysolanaapp"
+name = "solana_state_app"
 
 [features]
 no-entrypoint = []
 no-idl = []
+no-log-ix-name = []
 cpi = ["no-entrypoint"]
 default = []
 
 [dependencies]
-anchor-lang = "0.18.2"
+anchor-lang = "0.19.0"

@@ -3,20 +3,20 @@ use anchor_lang::prelude::*;
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
-pub mod mysolanaapp {
+pub mod solana_state_app {
     use super::*;
     pub fn create(ctx: Context<Create>) -> ProgramResult {
-        let base_account = &mut ctx.accounts.base_account;
+        let state_account = &mut ctx.accounts.state_account;
         let first_state = Some(State::FirstState {
             count: 0,
         });
-        base_account.current = first_state;
+        state_account.current = first_state;
         Ok(())
     }
 
     pub fn increment(ctx: Context<Increment>) -> ProgramResult {
-        let base_account = &mut ctx.accounts.base_account;
-        match &mut base_account.current {
+        let state_account = &mut ctx.accounts.state_account;
+        match &mut state_account.current {
             Some(State::FirstState { count }) => {
                 if *count == u32::MAX {
                     return Err(CustomError::MaxCountReached.into());
@@ -40,8 +40,8 @@ pub mod mysolanaapp {
     }
 
     pub fn decrement(ctx: Context<Decrement>) -> ProgramResult {
-        let base_account = &mut ctx.accounts.base_account;
-        match &mut base_account.current {
+        let state_account = &mut ctx.accounts.state_account;
+        match &mut state_account.current {
             Some(State::FirstState { count }) => {
                 if *count == u32::MIN {
                     msg!("Cannot decrement State count from 0");
@@ -67,11 +67,11 @@ pub mod mysolanaapp {
     }
 
     pub fn upgrade_account(ctx: Context<UpgradeAccount>) -> ProgramResult {
-        let base_account = &mut ctx.accounts.base_account;
-        match &mut base_account.current {
+        let state_account = &mut ctx.accounts.state_account;
+        match &mut state_account.current {
             Some(State::FirstState { count }) => {
                 msg!("Upgrading First State to Second State");
-                base_account.current = Some(State::SecondState { count: *count as u64 });
+                state_account.current = Some(State::SecondState { count: *count as u64 });
             }
             Some(State::SecondState { .. }) => {
                 //Nothing to do
@@ -95,7 +95,7 @@ pub enum CustomError {
 #[derive(Accounts)]
 pub struct Create<'info> {
     #[account(init, payer = user, space = 8 + 8 + 32)]
-    pub base_account: Account<'info, BaseAccount>,
+    pub state_account: Account<'info, StateAccount>,
     #[account(mut)]
     pub user: Signer<'info>,
     pub system_program: Program<'info, System>
@@ -104,24 +104,24 @@ pub struct Create<'info> {
 #[derive(Accounts)]
 pub struct Increment<'info> {
     #[account(mut)]
-    pub base_account: Account<'info, BaseAccount>
+    pub state_account: Account<'info, StateAccount>
 }
 
 #[derive(Accounts)]
 pub struct Decrement<'info> {
     #[account(mut)]
-    pub base_account: Account<'info, BaseAccount>
+    pub state_account: Account<'info, StateAccount>
 }
 
 #[derive(Accounts)]
 pub struct UpgradeAccount<'info> {
     #[account(mut)]
-    pub base_account: Account<'info, BaseAccount>
+    pub state_account: Account<'info, StateAccount>
 }
 
 #[account]
 #[derive(Default)]
-pub struct BaseAccount {
+pub struct StateAccount {
     pub current: Option<State>,
 }
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
