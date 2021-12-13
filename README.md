@@ -1,7 +1,7 @@
-# mysolanaapp
+# Solana State App Example
 Simple Solana App showcasing a program with multiple State Accounts, with upgradeability between them.
 
-Contains 
+Contains atomic tests to whow that basic program functions work, and also that they still work after upgrading the account.
 
 ## Prerequisites
 
